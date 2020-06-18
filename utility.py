@@ -16,3 +16,4 @@ def display_photo(picture):
     plt.show()
 
 def initialize_parameters():
+    pass
