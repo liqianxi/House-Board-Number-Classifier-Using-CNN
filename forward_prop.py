@@ -6,13 +6,3 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import utility
-
-def load_dataset(datasetName):
-    # return a dictionary with X as key
-    return loadmat(datasetName)
-
-def display_photo(picture):
-    plt.imshow(picture, interpolation='nearest')
-    plt.show()
-
-def initialize_parameters():
