@@ -9,7 +9,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utility
 
-
+    '''
+    1. Initialize parameters / Define hyperparameters
+    2. Loop for num_iterations:
+        a. Forward propagation
+        b. Compute cost function
+        c. Backward propagation
+        d. Update parameters (using parameters, and grads from backprop) 
+    4. Use trained parameters to predict labels
+    '''
 class Model:
     def __init__(self):
         self.model = self.model_definition()
@@ -83,42 +91,33 @@ class Model:
         self.test_y = testset_label
 
     def learning(self):
-        assert self.training_x != None,"X is None"
-        assert self.training_y != None,"Y is None"
         self.model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
-        self.model.fit(self.training_x, self.training_y, batch_size=32, epochs=10, shuffle=True)
-        self.model.save('/model')
-        '''
-        1. Initialize parameters / Define hyperparameters
-        2. Loop for num_iterations:
-            a. Forward propagation
-            b. Compute cost function
-            c. Backward propagation
-            d. Update parameters (using parameters, and grads from backprop) 
-        4. Use trained parameters to predict labels
-        '''
+        self.model.fit(self.training_x, self.training_y, batch_size=8, epochs=10, shuffle=True)
+        self.model.save('model.h5')
+ 
     def predict(self):
-        y_predict = self.model.predict_classes(self.test_x)
-        accuracy = tf.keras.losses.BinaryCrossentropy()(y_true=self.test_y,y_pred=y_predict).numpy()
+        y_predict = self.model.predict(self.test_x)
+        correct = 0
+        for i in range(len(y_predict)):
+            if np.argmax(self.test_y[i]) == np.argmax(y_predict[i]):
+                correct+=1
+        accuracy = correct/len(y_predict)
+        #accuracy = tf.keras.losses.BinaryCrossentropy()(y_true=self.test_y, y_pred=y_predict).numpy()
         print("accuracy rate for test set is:", accuracy)
 
 
 model = Model()
 model.load_all_data()
 try:
-    keras.models.load_model("/model")
+    (model.model).load_weights("model.h5")
 except Exception:
     print("Model loading Failed, learn again")
-    model.learning()
 else:
     print("Model loading successful")
 finally:
+    model.learning()
     model.predict()
 
 
-'''
-dataset = utility.load_dataset('dataset/train_32x32.mat')
-print(dataset['X'][:,:,:,0])    
-temp = np.rollaxis(dataset['X'], axis=-1)[0,:,:,:]
-print(temp.shape) '''
+
 

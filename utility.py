@@ -15,5 +15,4 @@ def display_photo(picture):
     plt.imshow(picture, interpolation='nearest')
     plt.show()
 
-def initialize_parameters():
-    pass
+
