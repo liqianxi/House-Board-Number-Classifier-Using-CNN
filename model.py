@@ -3,7 +3,7 @@ import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.layers.normalization import BatchNormalization
-import os
+from keras.utils import to_categorical
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ class Model:
         # FC part
         model.add(Flatten())
         # first FC layer
-        model.add(Dense(960,input_shape=(32*32*3,)))
+        model.add(Dense(960))
         model.add(Activation('relu'))
         model.add(Dropout(0.4))
         
@@ -54,7 +54,7 @@ class Model:
         model.add(Dropout(0.4))
 
         # Output
-        model.add(Dense(1))
+        model.add(Dense(11))
         
         model.add(Activation('softmax'))
 
@@ -68,11 +68,11 @@ class Model:
         # use dataset['X'][:,:,:,i] to get ith picture
         training_data = dataset['X'] 
         transform_x = np.rollaxis(training_data, axis=-1)  # (73257, 32, 32, 3)
-        training_label = dataset['y'] # (73257, 1)
-
+        training_label = to_categorical(dataset['y']) # (73257, 1)
+        print(training_label)
         testset_data = testset['X']  # (32, 32, 3, 26032)
         transform_test_x = np.rollaxis(testset_data, axis=-1)  # (26032, 32, 32, 3)
-        testset_label = testset['y']  # (26032, 1)
+        testset_label = to_categorical(testset['y'])  # (26032, 1)
 
         # utility.display_photo(training_data)
         # training_data.shape 
@@ -81,8 +81,8 @@ class Model:
         # standardize the rgb colors
         training_x = transform_x/256
         test_x = transform_test_x/256
-        self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
-        self.model.fit(training_x, training_label, batch_size=32, epochs=2,validation_data=[transform_test_x,testset_label])
+        self.model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
+        self.model.fit(training_x, training_label, batch_size=32, epochs=10,shuffle=True)
         '''
         1. Initialize parameters / Define hyperparameters
         2. Loop for num_iterations:
