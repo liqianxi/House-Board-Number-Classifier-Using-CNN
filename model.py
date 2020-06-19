@@ -13,6 +13,11 @@ import utility
 class Model:
     def __init__(self):
         self.model = self.model_definition()
+        self.training_x = None
+        self.training_y = None
+        self.test_x = None
+        self.test_y = None
+        
     def model_definition(self):
         # empty model
         
@@ -61,28 +66,28 @@ class Model:
         #model.summary()
         return model
 
-
-    def learning(self):
+    def load_all_data(self):
         dataset = utility.load_dataset('dataset/train_32x32.mat')
         testset = utility.load_dataset('dataset/test_32x32.mat')
         # use dataset['X'][:,:,:,i] to get ith picture
         training_data = dataset['X'] 
         transform_x = np.rollaxis(training_data, axis=-1)  # (73257, 32, 32, 3)
         training_label = to_categorical(dataset['y']) # (73257, 1)
-        print(training_label)
         testset_data = testset['X']  # (32, 32, 3, 26032)
         transform_test_x = np.rollaxis(testset_data, axis=-1)  # (26032, 32, 32, 3)
         testset_label = to_categorical(testset['y'])  # (26032, 1)
-
-        # utility.display_photo(training_data)
-        # training_data.shape 
-        #training_x_flatten = training_data.reshape(training_data.shape[-1],-1).T
-        #testset_x_flatten = testset_data.reshape(testset_data.shape[-1],-1).T
         # standardize the rgb colors
-        training_x = transform_x/256
-        test_x = transform_test_x/256
+        self.training_x = transform_x/256
+        self.test_x = transform_test_x/256
+        self.training_y = training_label
+        self.test_y = testset_label
+
+    def learning(self):
+        assert self.training_x != None,"X is None"
+        assert self.training_y != None,"Y is None"
         self.model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
-        self.model.fit(training_x, training_label, batch_size=32, epochs=10,shuffle=True)
+        self.model.fit(self.training_x, self.training_y, batch_size=32, epochs=10, shuffle=True)
+        self.model.save('/model')
         '''
         1. Initialize parameters / Define hyperparameters
         2. Loop for num_iterations:
@@ -92,9 +97,24 @@ class Model:
             d. Update parameters (using parameters, and grads from backprop) 
         4. Use trained parameters to predict labels
         '''
+    def predict(self):
+        y_predict = self.model.predict_classes(self.test_x)
+        accuracy = tf.keras.losses.BinaryCrossentropy()(y_true=self.test_y,y_pred=y_predict).numpy()
+        print("accuracy rate for test set is:", accuracy)
+
 
 model = Model()
-model.learning()
+model.load_all_data()
+try:
+    keras.models.load_model("/model")
+except Exception:
+    print("Model loading Failed, learn again")
+    model.learning()
+else:
+    print("Model loading successful")
+finally:
+    model.predict()
+
 
 '''
 dataset = utility.load_dataset('dataset/train_32x32.mat')
