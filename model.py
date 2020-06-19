@@ -4,6 +4,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.layers.normalization import BatchNormalization
 import os
+import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import utility
@@ -14,42 +15,50 @@ class Model:
         self.model = self.model_definition()
     def model_definition(self):
         # empty model
+        
         model = Sequential()
-
+        
         # first Conv layer
-        model.add(Conv2D(filters=15, input_shape=(32,32,3), kernel_size=(3,3), strides=(1,1), padding='same', activation='relu'))
+        model.add(Conv2D(filters=15, input_shape=(32,32,3), kernel_size=(3,3), strides=(1,1), padding='same'))
+        model.add(Activation('relu'))
         # Max Pooling
         model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
-
+        
         # second Conv layer
-        model.add(Conv2D(filters=25, kernel_size=(3,3), strides=(1,1), padding='same', activation='relu'))
+        model.add(Conv2D(filters=25, kernel_size=(3,3), strides=(1,1), padding='same'))
+        model.add(Activation('relu'))
         # Max Pooling
         model.add(MaxPooling2D(pool_size=(4,4), strides=(2,2), padding='valid'))
-
+        
         # third conv layer
-        model.add(Conv2D(filters=60, kernel_size=(1,1), strides=(1,1), padding='same', activation='relu'))
+        model.add(Conv2D(filters=60, kernel_size=(1,1), strides=(1,1), padding='same'))
+        model.add(Activation('relu'))
         # Max Pooling
         model.add(MaxPooling2D(pool_size=(1,1), strides=(2,2), padding='valid'))
 
         # FC part
         model.add(Flatten())
         # first FC layer
-        model.add(Dense(960, activation='relu'))
+        model.add(Dense(960,input_shape=(32*32*3,)))
+        model.add(Activation('relu'))
         model.add(Dropout(0.4))
-
+        
         # second FC layer
-        model.add(Dense(240, activation='relu'))
+        model.add(Dense(240))
+        model.add(Activation('relu'))
         model.add(Dropout(0.4))
 
         # third FC layer
-        model.add(Dense(64, activation='relu'))
+        model.add(Dense(64))
+        model.add(Activation('relu'))
         model.add(Dropout(0.4))
 
         # Output
-        model.add(Dense(1, activation='relu'))
+        model.add(Dense(1))
+        
         model.add(Activation('softmax'))
 
-        model.summary()
+        #model.summary()
         return model
 
 
@@ -60,6 +69,7 @@ class Model:
         training_data = dataset['X'] 
         transform_x = np.rollaxis(training_data, axis=-1)  # (73257, 32, 32, 3)
         training_label = dataset['y'] # (73257, 1)
+
         testset_data = testset['X']  # (32, 32, 3, 26032)
         transform_test_x = np.rollaxis(testset_data, axis=-1)  # (26032, 32, 32, 3)
         testset_label = testset['y']  # (26032, 1)
@@ -71,8 +81,8 @@ class Model:
         # standardize the rgb colors
         training_x = transform_x/256
         test_x = transform_test_x/256
-        self.model.compile(loss=keras.losses.categorical_crossentropy, optimizer='adam', metrics=['accuracy'])
-        self.model.fit(training_x, training_label, batch_size=32, epochs=10)
+        self.model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
+        self.model.fit(training_x, training_label, batch_size=32, epochs=2,validation_data=[transform_test_x,testset_label])
         '''
         1. Initialize parameters / Define hyperparameters
         2. Loop for num_iterations:
@@ -86,5 +96,9 @@ class Model:
 model = Model()
 model.learning()
 
+'''
+dataset = utility.load_dataset('dataset/train_32x32.mat')
+print(dataset['X'][:,:,:,0])    
+temp = np.rollaxis(dataset['X'], axis=-1)[0,:,:,:]
+print(temp.shape) '''
 
-    
